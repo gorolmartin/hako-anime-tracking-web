@@ -84,13 +84,10 @@ export function FeaturesSection() {
     return sectionTop + progress * scrollRange;
   }, []);
 
-  /* ── Play video forward to a stop point ── */
+  /* ── Play video forward to a stop point (fire-and-forget, no isAnimating coupling) ── */
   const playVideoTo = useCallback((targetIndex: number) => {
     const video = videoRef.current;
-    if (!video) {
-      isAnimating.current = false;
-      return;
-    }
+    if (!video) return;
 
     /* Clean up previous listener/timeout */
     if (videoListenerRef.current) {
@@ -104,37 +101,44 @@ export function FeaturesSection() {
 
     const stopTime = VIDEO_STOPS[targetIndex];
 
+    const cleanUp = () => {
+      if (videoTimeoutRef.current) {
+        clearTimeout(videoTimeoutRef.current);
+        videoTimeoutRef.current = null;
+      }
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      videoListenerRef.current = null;
+    };
+
     const onTimeUpdate = () => {
       if (video.currentTime >= stopTime) {
-        clearTimeout(videoTimeoutRef.current!);
-        videoTimeoutRef.current = null;
         video.pause();
-        video.removeEventListener("timeupdate", onTimeUpdate);
-        videoListenerRef.current = null;
-        isAnimating.current = false;
+        cleanUp();
       }
     };
 
-    const timeout = setTimeout(() => {
+    videoTimeoutRef.current = setTimeout(() => {
       video.pause();
       video.currentTime = stopTime;
       video.removeEventListener("timeupdate", onTimeUpdate);
       videoListenerRef.current = null;
       videoTimeoutRef.current = null;
-      isAnimating.current = false;
-    }, 8000);
+    }, 3000);
 
     videoListenerRef.current = onTimeUpdate;
-    videoTimeoutRef.current = timeout;
-
     video.addEventListener("timeupdate", onTimeUpdate);
-    video.play().catch(() => {
-      clearTimeout(timeout);
-      video.removeEventListener("timeupdate", onTimeUpdate);
-      videoListenerRef.current = null;
-      videoTimeoutRef.current = null;
+
+    video.play().then(() => {
+      /* Safari may "succeed" but not actually play — check after 100ms */
+      setTimeout(() => {
+        if (video.paused && videoListenerRef.current === onTimeUpdate) {
+          video.currentTime = stopTime;
+          cleanUp();
+        }
+      }, 100);
+    }).catch(() => {
       video.currentTime = stopTime;
-      isAnimating.current = false;
+      cleanUp();
     });
   }, []);
 
@@ -147,12 +151,12 @@ export function FeaturesSection() {
       currentSnap.current = targetIndex;
       setActiveScreen(targetIndex);
 
-      /* Safety: force unlock if something fails */
+      /* Safety: force unlock if something fails (2s backstop) */
       if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
       safetyTimeoutRef.current = setTimeout(() => {
         isAnimating.current = false;
         safetyTimeoutRef.current = null;
-      }, 10000);
+      }, 2000);
 
       /* Cancel any in-flight scroll animation */
       if (scrollAnimRef.current) {
@@ -169,24 +173,23 @@ export function FeaturesSection() {
         onUpdate: (v) => window.scrollTo(0, v),
         onComplete: () => {
           scrollAnimRef.current = null;
+          isAnimating.current = false;
+          if (safetyTimeoutRef.current) {
+            clearTimeout(safetyTimeoutRef.current);
+            safetyTimeoutRef.current = null;
+          }
         },
       });
 
-      /* Play or seek the video */
+      /* Play or seek the video (fire-and-forget, decoupled from isAnimating) */
       const video = videoRef.current;
-      if (!video) {
-        isAnimating.current = false;
-        return;
-      }
+      if (!video) return;
 
       if (direction === 1 && !prefersReducedMotion) {
-        /* Forward: play from current time to stop point */
         playVideoTo(targetIndex);
       } else {
-        /* Backward or reduced motion: instantly seek to the stop point */
         video.pause();
         video.currentTime = VIDEO_STOPS[targetIndex];
-        isAnimating.current = false;
       }
     },
     [progressToScrollY, playVideoTo, prefersReducedMotion],
@@ -202,7 +205,7 @@ export function FeaturesSection() {
 
         const video = videoRef.current;
         if (video && video.currentTime === 0) {
-          /* Snap scroll to first rest zone and play video to first stop */
+          /* Snap scroll to first rest zone */
           isAnimating.current = true;
           currentSnap.current = 0;
           setActiveScreen(0);
@@ -216,12 +219,12 @@ export function FeaturesSection() {
             onUpdate: (val) => window.scrollTo(0, val),
             onComplete: () => {
               scrollAnimRef.current = null;
+              isAnimating.current = false;
             },
           });
 
           /* Always seek on entry (play may be blocked on mobile) */
           video.currentTime = VIDEO_STOPS[0];
-          isAnimating.current = false;
         }
       }
 
@@ -293,6 +296,22 @@ export function FeaturesSection() {
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
+
+      /* Re-sync currentSnap to actual scroll position to prevent desync */
+      const progress = scrollYProgress.get();
+      if (progress > 0 && progress < 1) {
+        let closest = 0;
+        let minDist = Infinity;
+        for (let i = 0; i < SCROLL_SNAPS.length; i++) {
+          const dist = Math.abs(progress - SCROLL_SNAPS[i]);
+          if (dist < minDist) {
+            minDist = dist;
+            closest = i;
+          }
+        }
+        currentSnap.current = closest;
+        setActiveScreen(closest);
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -320,7 +339,7 @@ export function FeaturesSection() {
 
       if (isAnimating.current) return;
       if (prefersReducedMotion) return;
-      if (Math.abs(deltaY) < 50) return;
+      if (Math.abs(deltaY) < 35) return;
 
       touchStartY.current = null;
       snapTo(nextSnap, direction as 1 | -1);
