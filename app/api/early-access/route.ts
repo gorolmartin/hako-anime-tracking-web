@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LoopsClient } from "loops";
 
-const loops = new LoopsClient(process.env.LOOPS_API_KEY as string);
-
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -34,6 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const loops = new LoopsClient(process.env.LOOPS_API_KEY);
     const resp = await loops.updateContact({ email });
 
     if (!resp.success) {
