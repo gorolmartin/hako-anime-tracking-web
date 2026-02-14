@@ -63,6 +63,7 @@ export function FeaturesSection() {
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoListenerRef = useRef<(() => void) | null>(null);
   const videoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoPrimedRef = useRef(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -94,6 +95,27 @@ export function FeaturesSection() {
       video.removeEventListener("timeupdate", onTimeUpdate);
     });
     return () => video.removeEventListener("timeupdate", onTimeUpdate);
+  }, []);
+
+  /* ── Prime video on first touch to unlock programmatic playback (mobile Safari) ── */
+  useEffect(() => {
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
+
+    const primeVideo = () => {
+      if (videoPrimedRef.current) return;
+      videoPrimedRef.current = true;
+      const t = video.currentTime;
+      video.play().then(() => {
+        video.pause();
+        video.currentTime = t;
+      }).catch(() => {});
+      section.removeEventListener("touchstart", primeVideo);
+    };
+
+    section.addEventListener("touchstart", primeVideo, { once: true, passive: true });
+    return () => section.removeEventListener("touchstart", primeVideo);
   }, []);
 
   /* ── Convert scrollYProgress → absolute window.scrollY ── */
@@ -150,13 +172,13 @@ export function FeaturesSection() {
     video.addEventListener("timeupdate", onTimeUpdate);
 
     video.play().then(() => {
-      /* Safari may "succeed" but not actually play — check after 100ms */
+      /* Safari may "succeed" but not actually play — check after 500ms */
       setTimeout(() => {
         if (video.paused && videoListenerRef.current === onTimeUpdate) {
           video.currentTime = stopTime;
           cleanUp();
         }
-      }, 100);
+      }, 500);
     }).catch(() => {
       video.currentTime = stopTime;
       cleanUp();

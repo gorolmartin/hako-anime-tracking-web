@@ -88,7 +88,7 @@ export function Hero() {
             </Typography>
           </AnimatedSection>
           <AnimatedSection delay={0.2}>
-            <Typography variant="body" className="text-text-secondary text-balance leading-[22px]">
+            <Typography variant="body" className="text-text-secondary text-balance leading-[22px] mt-0 mb-4">
               One place to follow your watchlist, get release alerts, and discover what to watch next.
             </Typography>
           </AnimatedSection>
