@@ -10,7 +10,7 @@ import {
 } from "framer-motion";
 
 /* ── Video stop points (seconds) for each screen ── */
-const VIDEO_STOPS = [1.3, 3.65, 5.2, 7.4, 9.4];
+const VIDEO_STOPS = [1.4, 3.65, 5.2, 7.4, 9.4];
 
 /* ── Scroll snap points (scrollYProgress 0-1) to advance page position ── */
 const SCROLL_SNAPS = [0, 0.26, 0.46, 0.66, 0.90];
@@ -73,6 +73,27 @@ export function FeaturesSection() {
   useEffect(() => {
     const video = videoRef.current;
     if (video) video.setAttribute("webkit-playsinline", "true");
+  }, []);
+
+  /* ── Start video on page load: play and stop at 1.4s (Welcome) ── */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const stopAt = VIDEO_STOPS[0];
+    const onTimeUpdate = () => {
+      if (video.currentTime >= stopAt) {
+        video.pause();
+        video.currentTime = stopAt;
+        video.removeEventListener("timeupdate", onTimeUpdate);
+      }
+    };
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.play().catch(() => {
+      /* Autoplay blocked (e.g. mobile): just seek to stop */
+      video.currentTime = stopAt;
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    });
+    return () => video.removeEventListener("timeupdate", onTimeUpdate);
   }, []);
 
   /* ── Convert scrollYProgress → absolute window.scrollY ── */
@@ -202,30 +223,12 @@ export function FeaturesSection() {
     const unsubscribe = scrollYProgress.on("change", (v) => {
       if (v > 0 && v < 1 && !hasEnteredRef.current) {
         hasEnteredRef.current = true;
+        currentSnap.current = 0;
+        setActiveScreen(0);
 
+        /* Fix up frame when scrolling in (e.g. if autoplay was blocked on load) */
         const video = videoRef.current;
-        if (video && video.currentTime === 0) {
-          /* Snap scroll to first rest zone */
-          isAnimating.current = true;
-          currentSnap.current = 0;
-          setActiveScreen(0);
-
-          const fromScroll = window.scrollY;
-          const toScroll = progressToScrollY(SCROLL_SNAPS[0]);
-
-          scrollAnimRef.current = animate(fromScroll, toScroll, {
-            duration: prefersReducedMotion ? 0 : 0.6,
-            ease: [0.32, 0.72, 0, 1],
-            onUpdate: (val) => window.scrollTo(0, val),
-            onComplete: () => {
-              scrollAnimRef.current = null;
-              isAnimating.current = false;
-            },
-          });
-
-          /* Always seek on entry (play may be blocked on mobile) */
-          video.currentTime = VIDEO_STOPS[0];
-        }
+        if (video) video.currentTime = VIDEO_STOPS[0];
       }
 
       /* Reset state when leaving section (scroll back up) */
@@ -367,7 +370,7 @@ export function FeaturesSection() {
     <section
       ref={sectionRef}
       className="relative"
-      style={{ height: "500vh" }}
+      style={{ height: "500vh", marginTop: "-1vh" }}
     >
       <div className="sticky top-0 h-screen flex flex-col gap-8 md:grid md:grid-cols-2 md:gap-12 lg:gap-16 items-center justify-center px-6 max-w-6xl mx-auto">
         {/* ── Left: Feature text ── */}
@@ -415,7 +418,7 @@ export function FeaturesSection() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0, ease: "easeOut" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative mx-auto overflow-hidden min-w-0"
             style={{
               height: "min(70vh, 90vh)",

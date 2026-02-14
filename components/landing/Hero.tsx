@@ -83,12 +83,12 @@ export function Hero() {
             </span>
           </AnimatedSection>
           <AnimatedSection delay={0.1}>
-            <Typography variant="display" className="text-balance">
+            <Typography variant="display" className="text-balance text-[40px] leading-[44px] md:text-display md:leading-display">
               Track every anime. Never miss an episode.
             </Typography>
           </AnimatedSection>
           <AnimatedSection delay={0.2}>
-            <Typography variant="body" className="text-text-secondary text-balance">
+            <Typography variant="body" className="text-text-secondary text-balance leading-[22px]">
               One place to follow your watchlist, get release alerts, and discover what to watch next.
             </Typography>
           </AnimatedSection>
