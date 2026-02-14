@@ -60,6 +60,7 @@ export function FeaturesSection() {
   const isAnimating = useRef(false);
   const scrollAnimRef = useRef<ReturnType<typeof animate> | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -93,15 +94,22 @@ export function FeaturesSection() {
 
     const onTimeUpdate = () => {
       if (video.currentTime >= stopTime) {
+        clearTimeout(timeout);
         video.pause();
         video.removeEventListener("timeupdate", onTimeUpdate);
         isAnimating.current = false;
       }
     };
 
+    const timeout = setTimeout(() => {
+      video.pause();
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      isAnimating.current = false;
+    }, 3000);
+
     video.addEventListener("timeupdate", onTimeUpdate);
     video.play().catch(() => {
-      /* autoplay blocked — unlock so user can try again */
+      clearTimeout(timeout);
       video.removeEventListener("timeupdate", onTimeUpdate);
       isAnimating.current = false;
     });
@@ -115,6 +123,13 @@ export function FeaturesSection() {
       isAnimating.current = true;
       currentSnap.current = targetIndex;
       setActiveScreen(targetIndex);
+
+      /* Safety: force unlock if something fails */
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = setTimeout(() => {
+        isAnimating.current = false;
+        safetyTimeoutRef.current = null;
+      }, 2000);
 
       /* Cancel any in-flight scroll animation */
       if (scrollAnimRef.current) {
@@ -193,9 +208,27 @@ export function FeaturesSection() {
         }
       }
 
-      /* Reset entry flag when scrolling out of section */
+      /* Reset state when leaving section (scroll back up) */
       if (v <= 0) {
         hasEnteredRef.current = false;
+        currentSnap.current = 0;
+        setActiveScreen(0);
+        isAnimating.current = false;
+        if (scrollAnimRef.current) {
+          scrollAnimRef.current.stop();
+          scrollAnimRef.current = null;
+        }
+      }
+
+      /* Reset when scrolling past section */
+      if (v >= 1) {
+        currentSnap.current = 4;
+        setActiveScreen(4);
+        isAnimating.current = false;
+        if (scrollAnimRef.current) {
+          scrollAnimRef.current.stop();
+          scrollAnimRef.current = null;
+        }
       }
     });
 
@@ -245,22 +278,24 @@ export function FeaturesSection() {
       touchStartY.current = e.touches[0].clientY;
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
+      const progress = scrollYProgress.get();
+
+      /* Outside section → let native scroll work */
+      if (progress <= 0 || progress >= 1) return;
+
+      /* Inside section: prevent native scroll from drifting */
+      e.preventDefault();
+
+      if (isAnimating.current) return;
+
+      if (prefersReducedMotion) return;
+
+      /* Gesture already consumed */
       if (touchStartY.current === null) return;
 
-      const progress = scrollYProgress.get();
-      if (progress <= 0 || progress >= 1) {
-        touchStartY.current = null;
-        return;
-      }
-
-      if (isAnimating.current) {
-        touchStartY.current = null;
-        return;
-      }
-
-      const deltaY = touchStartY.current - e.changedTouches[0].clientY;
-      touchStartY.current = null;
+      const currentY = e.touches[0].clientY;
+      const deltaY = touchStartY.current - currentY;
 
       if (Math.abs(deltaY) < 50) return;
 
@@ -269,19 +304,23 @@ export function FeaturesSection() {
 
       if (nextSnap < 0 || nextSnap > 4) return;
 
-      if (prefersReducedMotion) return;
-
-      e.preventDefault();
+      touchStartY.current = null;
       snapTo(nextSnap, direction as 1 | -1);
     };
 
-    section.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-    section.addEventListener("touchend", handleTouchEnd, { passive: false });
+    const handleTouchEnd = () => {
+      touchStartY.current = null;
+    };
+
+    section.addEventListener("touchstart", handleTouchStart, { passive: true });
+    section.addEventListener("touchmove", handleTouchMove, { passive: false });
+    section.addEventListener("touchend", handleTouchEnd, { passive: true });
+    section.addEventListener("touchcancel", handleTouchEnd, { passive: true });
     return () => {
       section.removeEventListener("touchstart", handleTouchStart);
+      section.removeEventListener("touchmove", handleTouchMove);
       section.removeEventListener("touchend", handleTouchEnd);
+      section.removeEventListener("touchcancel", handleTouchEnd);
     };
   }, [scrollYProgress, snapTo, prefersReducedMotion]);
 

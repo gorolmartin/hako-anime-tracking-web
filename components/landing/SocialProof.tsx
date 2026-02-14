@@ -48,7 +48,7 @@ export function SocialProof() {
     <section ref={ref} className="bg-bg-app py-24">
       <AnimatedSection className="max-w-[600px] mx-auto px-6">
         <div className="flex flex-col items-center gap-6">
-          <Card className="w-full flex flex-col gap-4 md:gap-6">
+          <Card className="w-full flex flex-col md:flex-row md:flex-wrap md:items-center gap-4 md:gap-6">
             <div className="flex flex-row flex-wrap items-center gap-4 md:gap-6">
               <span className="text-display leading-display tracking-display font-medium text-text-primary shrink-0">
                 {displayCount.toLocaleString()}
@@ -60,7 +60,7 @@ export function SocialProof() {
             <a
               href="#early-access"
               className={cn(
-                "font-medium rounded-lg transition-colors w-full",
+                "font-medium rounded-lg transition-colors w-full md:w-auto md:shrink-0 md:ml-auto",
                 "btn-primary-gradient text-text-on-fill",
                 "text-body leading-body tracking-body px-4 py-2",
                 "inline-flex items-center justify-center",
