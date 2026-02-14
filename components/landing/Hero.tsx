@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { AnimatedSection } from "./AnimatedSection";
 import { Button, Input, Typography } from "@/components/ui";
+import { InteractiveLogo } from "@/components/InteractiveLogo";
 
 export function Hero() {
   const [email, setEmail] = useState("");
@@ -63,16 +64,18 @@ export function Hero() {
       <div className="max-w-5xl mx-auto px-6 w-full">
         <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
           <AnimatedSection delay={0} className="flex flex-col items-center">
-            <div className="w-20 h-20 rounded-[24px] btn-primary-gradient flex items-center justify-center shrink-0">
-              <Image
-                src="/logo.svg"
-                alt=""
-                width={44}
-                height={48}
-                className="w-11 h-12"
-                aria-hidden
-              />
-            </div>
+            <InteractiveLogo>
+              <div className="w-20 h-20 rounded-[24px] btn-primary-gradient flex items-center justify-center shrink-0">
+                <Image
+                  src="/logo.svg"
+                  alt=""
+                  width={44}
+                  height={48}
+                  className="w-11 h-12"
+                  aria-hidden
+                />
+              </div>
+            </InteractiveLogo>
           </AnimatedSection>
           <AnimatedSection delay={0}>
             <span className="text-overline leading-overline tracking-overline font-semibold uppercase text-accent-blue-text">
