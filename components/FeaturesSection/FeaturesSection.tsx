@@ -66,6 +66,12 @@ export function FeaturesSection() {
     offset: ["start start", "end end"],
   });
 
+  /* ── webkit-playsinline for older iOS Safari ── */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.setAttribute("webkit-playsinline", "true");
+  }, []);
+
   /* ── Convert scrollYProgress → absolute window.scrollY ── */
   const progressToScrollY = useCallback((progress: number) => {
     const section = sectionRef.current;
@@ -336,12 +342,13 @@ export function FeaturesSection() {
             transition={{ duration: 0.6, delay: 0, ease: "easeOut" }}
             className="relative mx-auto overflow-hidden min-w-0"
             style={{
-              height: "min(70vh, 90dvh)",
-              width: "auto",
+              height: "min(70vh, 90vh)",
+              width: "calc(min(70vh, 90vh) * 9 / 19.5)",
               maxWidth: "100%",
               aspectRatio: "9 / 19.5",
               borderRadius: 32,
               border: "2px solid #1B1F28",
+              transform: "translateZ(0)",
             }}
           >
             <video
@@ -352,6 +359,7 @@ export function FeaturesSection() {
               preload="auto"
               aria-label="App preview video showing Hako features"
               className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "translateZ(0)" }}
             />
           </motion.div>
         </div>
