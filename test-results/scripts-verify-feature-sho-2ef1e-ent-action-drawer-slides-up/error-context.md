@@ -1,0 +1,99 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - main [ref=e3]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Anime Tracking Reimagined
+      - heading "Track every anime. Never miss an episode." [level=1] [ref=e9]
+      - paragraph [ref=e11]: One place to follow your watchlist, get release alerts, and discover what to watch next.
+      - generic [ref=e13]:
+        - textbox "Email address" [ref=e14]:
+          - /placeholder: Enter your email
+        - button "Get early access" [ref=e15]
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - heading "Your journey starts here" [level=2] [ref=e20]
+        - paragraph [ref=e21]: Sign in with AniList and your whole library comes with you. No setup, no fuss.
+      - generic [ref=e23]:
+        - generic [ref=e25]:
+          - img "Your journey starts here" [ref=e26]
+          - generic:
+            - generic: Login with AniList
+        - generic:
+          - generic:
+            - img "Everything at a glance"
+            - generic:
+              - generic:
+                - generic: 1 show
+                - generic: Good afternoon, you have new episodes across
+        - generic:
+          - generic:
+            - img "Never miss a drop"
+            - generic: Wed, Mar 20
+        - generic:
+          - generic:
+            - img "Discover your next obsession"
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - heading "Trusted by anime fans" [level=2] [ref=e36]
+        - paragraph [ref=e37]: Join thousands of users who keep their watchlist in sync.
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - heading "0+" [level=1] [ref=e41]:
+            - generic [ref=e42]: 0+
+          - text: Active trackers
+        - generic [ref=e43]:
+          - heading "0+" [level=1] [ref=e44]:
+            - generic [ref=e45]: 0+
+          - text: Anime tracked
+        - generic [ref=e46]:
+          - heading "0%" [level=1] [ref=e47]:
+            - generic [ref=e48]: 0%
+          - text: Uptime
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: “Finally a tracker that doesn’t get in the way. Clean, fast, and actually up to date.”
+          - generic [ref=e53]:
+            - generic [ref=e54]: A
+            - generic [ref=e55]:
+              - paragraph [ref=e56]: Alex K.
+              - text: "@alexwatches"
+        - generic [ref=e58]:
+          - paragraph [ref=e59]: “The notifications are a game-changer. I never miss a new episode anymore.”
+          - generic [ref=e60]:
+            - generic [ref=e61]: S
+            - generic [ref=e62]:
+              - paragraph [ref=e63]: Sam R.
+              - text: "@sam_anime"
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: “Love the stats. Seeing my viewing habits laid out like this is weirdly satisfying.”
+          - generic [ref=e67]:
+            - generic [ref=e68]: J
+            - generic [ref=e69]:
+              - paragraph [ref=e70]: Jordan M.
+              - text: "@jordanmanga"
+      - navigation "Social links" [ref=e72]:
+        - link "Twitter / X" [ref=e73] [cursor=pointer]:
+          - /url: "#"
+          - img [ref=e74]
+        - link "GitHub" [ref=e76] [cursor=pointer]:
+          - /url: "#"
+          - img [ref=e77]
+        - link "Discord" [ref=e79] [cursor=pointer]:
+          - /url: "#"
+          - img [ref=e80]
+  - contentinfo [ref=e82]:
+    - generic [ref=e84]:
+      - navigation "Footer" [ref=e85]:
+        - link "About" [ref=e86] [cursor=pointer]:
+          - /url: "#"
+          - paragraph [ref=e87]: About
+        - link "Privacy" [ref=e88] [cursor=pointer]:
+          - /url: "#"
+          - paragraph [ref=e89]: Privacy
+        - link "Terms" [ref=e90] [cursor=pointer]:
+          - /url: "#"
+          - paragraph [ref=e91]: Terms
+      - generic [ref=e92]: © 2026 AnimeTracking. All rights reserved.
+```

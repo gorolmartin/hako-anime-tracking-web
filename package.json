@@ -1,0 +1,30 @@
+{
+  "name": "anime-tracking-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint","deploy":"npx vercel","deploy:prod":"npx vercel --prod"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.34.0",
+    "loops": "^6.2.0",
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5"
+  }
+}

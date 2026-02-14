@@ -1,0 +1,291 @@
+@import "tailwindcss";
+
+@theme {
+  /* ─── Font ─── */
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* ─── Gray (hue 264°, from #07080A) ─── */
+  --color-gray-50: oklch(98.5% 0.0059 264);   /* #F8FAFE */
+  --color-gray-100: oklch(95.5% 0.0078 264);  /* #EDF0F6 */
+  --color-gray-150: oklch(92.5% 0.0097 264);  /* #E3E6ED */
+  --color-gray-200: oklch(88.0% 0.0124 264);  /* #D3D8E0 */
+  --color-gray-300: oklch(78.0% 0.0177 264);  /* #B2B8C3 */
+  --color-gray-400: oklch(65.0% 0.0228 264);  /* #888F9E */
+  --color-gray-500: oklch(52.0% 0.0250 264);  /* #626978 */
+  --color-gray-600: oklch(42.0% 0.0244 264);  /* #464D5B */
+  --color-gray-700: oklch(33.0% 0.0222 264);  /* #303541 */
+  --color-gray-800: oklch(24.0% 0.0187 264);  /* #1B1F28 */
+  --color-gray-850: oklch(19.0% 0.0162 264);  /* #10141B */
+  --color-gray-900: oklch(15.0% 0.0141 264);  /* #080B11 */
+  --color-gray-925: oklch(11.0% 0.0118 264);  /* #030408 */
+  --color-gray-950: oklch(7.0% 0.0094 264);   /* #010102 */
+  --color-gray-975: oklch(3.5% 0.0072 264);   /* #000000 */
+
+  /* ─── Blue (hue 255°, from #0B84FF) ─── */
+  --color-blue-50: oklch(97.0% 0.0140 255);   /* #EFF6FF */
+  --color-blue-100: oklch(94.0% 0.0350 255);  /* #DCEDFF */
+  --color-blue-200: oklch(87.0% 0.0750 255);  /* #B3D7FF */
+  --color-blue-300: oklch(79.0% 0.1200 255);  /* #85BEFF */
+  --color-blue-400: oklch(71.0% 0.1650 255);  /* #53A3FF */
+  --color-blue-500: oklch(63.0% 0.2000 255);  /* #1387FE */
+  --color-blue-600: oklch(55.0% 0.1950 255);  /* #006EDF */
+  --color-blue-700: oklch(46.0% 0.1700 255);  /* #0054B3 */
+  --color-blue-800: oklch(37.0% 0.1350 255);  /* #003D84 */
+  --color-blue-900: oklch(29.0% 0.0950 255);  /* #002A59 */
+  --color-blue-950: oklch(21.0% 0.0550 255);  /* #051831 */
+
+  /* ─── Coral (hue 30°, from #EE6447) ─── */
+  --color-coral-50: oklch(97.0% 0.0150 30);   /* #FFF2EF */
+  --color-coral-100: oklch(93.0% 0.0400 30);  /* #FFDFD8 */
+  --color-coral-200: oklch(86.0% 0.0900 30);  /* #FFBBAE */
+  --color-coral-300: oklch(78.0% 0.1450 30);  /* #FF917F */
+  --color-coral-400: oklch(70.0% 0.1800 30);  /* #FA6A57 */
+  --color-coral-500: oklch(63.0% 0.1950 30);  /* #E74B39 */
+  --color-coral-600: oklch(55.0% 0.1800 30);  /* #C53829 */
+  --color-coral-700: oklch(46.0% 0.1500 30);  /* #9A2A1E */
+  --color-coral-800: oklch(37.0% 0.1150 30);  /* #702016 */
+  --color-coral-900: oklch(29.0% 0.0800 30);  /* #4C1811 */
+  --color-coral-950: oklch(21.0% 0.0450 30);  /* #2A0F0B */
+
+  /* ─── Green (hue 155°, success) ─── */
+  --color-green-50: oklch(97.0% 0.0150 155);  /* #EEF8F1 */
+  --color-green-100: oklch(94.0% 0.0400 155); /* #D7F4E0 */
+  --color-green-200: oklch(87.0% 0.0850 155); /* #A8E5BC */
+  --color-green-300: oklch(79.0% 0.1350 155); /* #6BD494 */
+  --color-green-400: oklch(71.0% 0.1700 155); /* #1BBF70 */
+  --color-green-500: oklch(63.0% 0.1750 155); /* #00A657 */
+  --color-green-600: oklch(55.0% 0.1550 155); /* #008A46 */
+  --color-green-700: oklch(46.0% 0.1300 155); /* #006C35 */
+  --color-green-800: oklch(37.0% 0.1000 155); /* #004E27 */
+  --color-green-900: oklch(29.0% 0.0700 155); /* #02351B */
+  --color-green-950: oklch(21.0% 0.0400 155); /* #071E10 */
+
+  /* ─── Red (hue 12°, error) ─── */
+  --color-red-50: oklch(97.0% 0.0150 12);     /* #FFF1F2 */
+  --color-red-100: oklch(93.0% 0.0400 12);    /* #FFDEE1 */
+  --color-red-200: oklch(86.0% 0.0900 12);   /* #FFB9C1 */
+  --color-red-300: oklch(78.0% 0.1450 12);   /* #FF8E9F */
+  --color-red-400: oklch(70.0% 0.1850 12);   /* #FB637F */
+  --color-red-500: oklch(63.0% 0.2050 12);   /* #E94067 */
+  --color-red-600: oklch(55.0% 0.1950 12);   /* #C92852 */
+  --color-red-700: oklch(46.0% 0.1650 12);   /* #9E1B3F */
+  --color-red-800: oklch(37.0% 0.1250 12);   /* #73172E */
+  --color-red-900: oklch(29.0% 0.0880 12);   /* #4E131F */
+  --color-red-950: oklch(21.0% 0.0500 12);    /* #2B0D12 */
+
+  /* ─── Semantic (dark default) ─── */
+  --color-bg-app: var(--color-gray-950);
+  --color-bg-surface: var(--color-gray-925);
+  --color-bg-surface-raised: var(--color-gray-900);
+  --color-bg-surface-overlay: var(--color-gray-850);
+  --color-bg-interactive: var(--color-gray-800);
+  --color-bg-interactive-hover: var(--color-gray-700);
+
+  --color-border-subtle: var(--color-gray-925);
+  --color-border-default: var(--color-gray-850);
+  --color-border-strong: var(--color-gray-700);
+
+  --color-text-primary: var(--color-gray-50);
+  --color-text-secondary: var(--color-gray-300);
+  --color-text-tertiary: var(--color-gray-500);
+  --color-text-disabled: var(--color-gray-700);
+  --color-text-on-fill: var(--color-gray-50);
+
+  --color-accent-blue: var(--color-blue-500);
+  --color-accent-blue-hover: var(--color-blue-400);
+  --color-accent-blue-muted: var(--color-blue-950);
+  --color-accent-blue-text: var(--color-blue-400);
+
+  --color-accent-coral: var(--color-coral-400);
+  --color-accent-coral-hover: var(--color-coral-300);
+  --color-accent-coral-muted: var(--color-coral-950);
+  --color-accent-coral-text: var(--color-coral-400);
+
+  --color-success: var(--color-green-500);
+  --color-success-hover: var(--color-green-400);
+  --color-success-muted: var(--color-green-950);
+  --color-success-text: var(--color-green-400);
+
+  --color-error: var(--color-red-500);
+  --color-error-hover: var(--color-red-400);
+  --color-error-muted: var(--color-red-950);
+  --color-error-text: var(--color-red-400);
+
+  /* ─── Typography ─── */
+  --text-display: 3.5rem;
+  --text-h1: 2.5rem;
+  --text-h2: 2rem;
+  --text-h3: 1.5rem;
+  --text-h4: 1.25rem;
+  --text-h5: 1.0625rem;
+  --text-body-lg: 1.125rem;
+  --text-body: 1rem;
+  --text-body-sm: 0.875rem;
+  --text-caption: 0.8125rem;
+  --text-overline: 0.6875rem;
+  --text-micro: 0.625rem;
+
+  --leading-display: calc(62 / 56);
+  --leading-h1: calc(44 / 40);
+  --leading-h2: calc(35 / 32);
+  --leading-h3: calc(26 / 24);
+  --leading-h4: calc(22 / 20);
+  --leading-h5: calc(19 / 17);
+  --leading-body-lg: calc(20 / 18);
+  --leading-body: calc(18 / 16);
+  --leading-body-sm: calc(15 / 14);
+  --leading-caption: calc(14 / 13);
+  --leading-overline: calc(12 / 11);
+  --leading-micro: calc(11 / 10);
+
+  --tracking-display: -0.03em;
+  --tracking-h1: -0.025em;
+  --tracking-h2: -0.02em;
+  --tracking-h3: -0.015em;
+  --tracking-h4: -0.01em;
+  --tracking-h5: -0.005em;
+  --tracking-body-lg: 0em;
+  --tracking-body: 0em;
+  --tracking-body-sm: 0.005em;
+  --tracking-caption: 0.01em;
+  --tracking-overline: 0.08em;
+  --tracking-micro: 0.04em;
+}
+
+/* ─── Light mode overrides ─── */
+.light {
+  --color-bg-app: var(--color-gray-50);
+  --color-bg-surface: var(--color-gray-100);
+  --color-bg-surface-raised: var(--color-gray-150);
+  --color-bg-interactive: var(--color-gray-200);
+  --color-bg-interactive-hover: var(--color-gray-300);
+
+  --color-border-subtle: var(--color-gray-150);
+  --color-border-default: var(--color-gray-200);
+  --color-border-strong: var(--color-gray-400);
+
+  --color-text-primary: var(--color-gray-950);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-tertiary: var(--color-gray-500);
+  --color-text-disabled: var(--color-gray-300);
+  --color-text-on-fill: var(--color-gray-50);
+
+  --color-accent-blue: var(--color-blue-600);
+  --color-accent-blue-hover: var(--color-blue-700);
+  --color-accent-blue-muted: var(--color-blue-50);
+  --color-accent-blue-text: var(--color-blue-600);
+
+  --color-accent-coral: var(--color-coral-500);
+  --color-accent-coral-hover: var(--color-coral-600);
+  --color-accent-coral-muted: var(--color-coral-50);
+  --color-accent-coral-text: var(--color-coral-600);
+
+  --color-success: var(--color-green-600);
+  --color-success-hover: var(--color-green-700);
+  --color-success-muted: var(--color-green-50);
+  --color-success-text: var(--color-green-600);
+
+  --color-error: var(--color-red-600);
+  --color-error-hover: var(--color-red-700);
+  --color-error-muted: var(--color-red-50);
+  --color-error-text: var(--color-red-600);
+}
+
+/* ─── Hex fallbacks for browsers without OKLCH support ─── */
+@supports not (color: oklch(1 0 0)) {
+  :root {
+    --color-gray-50: #F8FAFE;
+    --color-gray-100: #EDF0F6;
+    --color-gray-150: #E3E6ED;
+    --color-gray-200: #D3D8E0;
+    --color-gray-300: #B2B8C3;
+    --color-gray-400: #888F9E;
+    --color-gray-500: #626978;
+    --color-gray-600: #464D5B;
+    --color-gray-700: #303541;
+    --color-gray-800: #1B1F28;
+    --color-gray-850: #10141B;
+    --color-gray-900: #080B11;
+    --color-gray-925: #030408;
+    --color-gray-950: #010102;
+    --color-gray-975: #000000;
+    --color-blue-50: #EFF6FF;
+    --color-blue-100: #DCEDFF;
+    --color-blue-200: #B3D7FF;
+    --color-blue-300: #85BEFF;
+    --color-blue-400: #53A3FF;
+    --color-blue-500: #1387FE;
+    --color-blue-600: #006EDF;
+    --color-blue-700: #0054B3;
+    --color-blue-800: #003D84;
+    --color-blue-900: #002A59;
+    --color-blue-950: #051831;
+    --color-coral-50: #FFF2EF;
+    --color-coral-100: #FFDFD8;
+    --color-coral-200: #FFBBAE;
+    --color-coral-300: #FF917F;
+    --color-coral-400: #FA6A57;
+    --color-coral-500: #E74B39;
+    --color-coral-600: #C53829;
+    --color-coral-700: #9A2A1E;
+    --color-coral-800: #702016;
+    --color-coral-900: #4C1811;
+    --color-coral-950: #2A0F0B;
+    --color-green-50: #EEF8F1;
+    --color-green-100: #D7F4E0;
+    --color-green-200: #A8E5BC;
+    --color-green-300: #6BD494;
+    --color-green-400: #1BBF70;
+    --color-green-500: #00A657;
+    --color-green-600: #008A46;
+    --color-green-700: #006C35;
+    --color-green-800: #004E27;
+    --color-green-900: #02351B;
+    --color-green-950: #071E10;
+    --color-red-50: #FFF1F2;
+    --color-red-100: #FFDEE1;
+    --color-red-200: #FFB9C1;
+    --color-red-300: #FF8E9F;
+    --color-red-400: #FB637F;
+    --color-red-500: #E94067;
+    --color-red-600: #C92852;
+    --color-red-700: #9E1B3F;
+    --color-red-800: #73172E;
+    --color-red-900: #4E131F;
+    --color-red-950: #2B0D12;
+  }
+}
+
+/* ─── Button primary gradient (fill + border) ─── */
+.btn-primary-gradient {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(to bottom, var(--color-blue-400), var(--color-blue-500)) padding-box,
+    linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-500)) border-box;
+}
+.btn-primary-gradient:hover {
+  background:
+    linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-400)) padding-box,
+    linear-gradient(to bottom, var(--color-blue-200), var(--color-blue-400)) border-box;
+}
+
+/* ─── Color scheme (native controls match theme) ─── */
+html.dark {
+  color-scheme: dark;
+}
+html.light {
+  color-scheme: light;
+}
+
+/* ─── Base styles ─── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
