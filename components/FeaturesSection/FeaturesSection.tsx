@@ -61,6 +61,8 @@ export function FeaturesSection() {
   const scrollAnimRef = useRef<ReturnType<typeof animate> | null>(null);
   const touchStartY = useRef<number | null>(null);
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoListenerRef = useRef<(() => void) | null>(null);
+  const videoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -90,27 +92,48 @@ export function FeaturesSection() {
       return;
     }
 
+    /* Clean up previous listener/timeout */
+    if (videoListenerRef.current) {
+      video.removeEventListener("timeupdate", videoListenerRef.current);
+      videoListenerRef.current = null;
+    }
+    if (videoTimeoutRef.current) {
+      clearTimeout(videoTimeoutRef.current);
+      videoTimeoutRef.current = null;
+    }
+
     const stopTime = VIDEO_STOPS[targetIndex];
 
     const onTimeUpdate = () => {
       if (video.currentTime >= stopTime) {
-        clearTimeout(timeout);
+        clearTimeout(videoTimeoutRef.current!);
+        videoTimeoutRef.current = null;
         video.pause();
         video.removeEventListener("timeupdate", onTimeUpdate);
+        videoListenerRef.current = null;
         isAnimating.current = false;
       }
     };
 
     const timeout = setTimeout(() => {
       video.pause();
+      video.currentTime = stopTime;
       video.removeEventListener("timeupdate", onTimeUpdate);
+      videoListenerRef.current = null;
+      videoTimeoutRef.current = null;
       isAnimating.current = false;
-    }, 3000);
+    }, 8000);
+
+    videoListenerRef.current = onTimeUpdate;
+    videoTimeoutRef.current = timeout;
 
     video.addEventListener("timeupdate", onTimeUpdate);
     video.play().catch(() => {
       clearTimeout(timeout);
       video.removeEventListener("timeupdate", onTimeUpdate);
+      videoListenerRef.current = null;
+      videoTimeoutRef.current = null;
+      video.currentTime = stopTime;
       isAnimating.current = false;
     });
   }, []);
@@ -129,7 +152,7 @@ export function FeaturesSection() {
       safetyTimeoutRef.current = setTimeout(() => {
         isAnimating.current = false;
         safetyTimeoutRef.current = null;
-      }, 2000);
+      }, 10000);
 
       /* Cancel any in-flight scroll animation */
       if (scrollAnimRef.current) {
@@ -196,15 +219,9 @@ export function FeaturesSection() {
             },
           });
 
-          if (!prefersReducedMotion) playVideoTo(0);
-          else {
-            const v = videoRef.current;
-            if (v) {
-              v.pause();
-              v.currentTime = VIDEO_STOPS[0];
-            }
-            isAnimating.current = false;
-          }
+          /* Always seek on entry (play may be blocked on mobile) */
+          video.currentTime = VIDEO_STOPS[0];
+          isAnimating.current = false;
         }
       }
 
@@ -284,25 +301,26 @@ export function FeaturesSection() {
       /* Outside section → let native scroll work */
       if (progress <= 0 || progress >= 1) return;
 
-      /* Inside section: prevent native scroll from drifting */
-      e.preventDefault();
-
-      if (isAnimating.current) return;
-
-      if (prefersReducedMotion) return;
-
-      /* Gesture already consumed */
-      if (touchStartY.current === null) return;
+      /* Gesture already consumed → block drift */
+      if (touchStartY.current === null) {
+        e.preventDefault();
+        return;
+      }
 
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartY.current - currentY;
-
-      if (Math.abs(deltaY) < 50) return;
-
       const direction = deltaY > 0 ? 1 : -1;
       const nextSnap = currentSnap.current + direction;
 
+      /* At boundary → let native scroll pass so user can leave */
       if (nextSnap < 0 || nextSnap > 4) return;
+
+      /* Inside section → block native scroll */
+      e.preventDefault();
+
+      if (isAnimating.current) return;
+      if (prefersReducedMotion) return;
+      if (Math.abs(deltaY) < 50) return;
 
       touchStartY.current = null;
       snapTo(nextSnap, direction as 1 | -1);
