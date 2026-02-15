@@ -50,6 +50,9 @@ const FEATURE_TEXT = [
 ];
 
 export function FeaturesSection() {
+  const LAST_INDEX = FEATURE_TEXT.length - 1;
+  const TOUCH_SWIPE_THRESHOLD = 25;
+
   const sectionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [activeScreen, setActiveScreen] = useState(0);
@@ -216,6 +219,21 @@ export function FeaturesSection() {
     return sectionTop + progress * scrollRange;
   }, []);
 
+  const progressToScreenIndex = useCallback((progress: number) => {
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+
+    let closest = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < SCROLL_SNAPS.length; i++) {
+      const dist = Math.abs(clampedProgress - SCROLL_SNAPS[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = i;
+      }
+    }
+    return closest;
+  }, []);
+
   /* ── Play video forward to a stop point (fire-and-forget, no isAnimating coupling) ── */
   const playVideoTo = useCallback((targetIndex: number) => {
     const video = videoRef.current;
@@ -287,7 +305,7 @@ export function FeaturesSection() {
   /* ── Snap to a screen index ── */
   const snapTo = useCallback(
     (targetIndex: number, direction: 1 | -1) => {
-      if (targetIndex < 0 || targetIndex > 4) return;
+      if (targetIndex < 0 || targetIndex > LAST_INDEX) return;
 
       isAnimating.current = true;
       currentSnap.current = targetIndex;
@@ -353,18 +371,26 @@ export function FeaturesSection() {
 
   useEffect(() => {
     const unsubscribe = scrollYProgress.on("change", (v) => {
-      if (v > 0 && v < 1 && !hasEnteredRef.current) {
-        hasEnteredRef.current = true;
-        currentSnap.current = 0;
-        setActiveScreen(0);
+      const clampedProgress = Math.max(0, Math.min(1, v));
+      const inSection = clampedProgress > 0 && clampedProgress < 1;
 
-        /* Fix up frame when scrolling in (e.g. if autoplay was blocked on load) */
-        const video = videoRef.current;
-        if (video) void seekTo(VIDEO_STOPS[0]);
+      if (inSection && !hasEnteredRef.current) {
+        hasEnteredRef.current = true;
+      }
+
+      /* Keep state synced during fast/momentum scroll when we're not actively animating */
+      if (inSection && !isAnimating.current) {
+        const index = progressToScreenIndex(clampedProgress);
+        if (index !== currentSnap.current) {
+          currentSnap.current = index;
+          setActiveScreen((prev) => (prev === index ? prev : index));
+          const video = videoRef.current;
+          if (video) void seekTo(VIDEO_STOPS[index]);
+        }
       }
 
       /* Reset state when leaving section (scroll back up) */
-      if (v <= 0) {
+      if (clampedProgress <= 0) {
         hasEnteredRef.current = false;
         currentSnap.current = 0;
         setActiveScreen(0);
@@ -376,9 +402,9 @@ export function FeaturesSection() {
       }
 
       /* Reset when scrolling past section */
-      if (v >= 1) {
-        currentSnap.current = 4;
-        setActiveScreen(4);
+      if (clampedProgress >= 1) {
+        currentSnap.current = LAST_INDEX;
+        setActiveScreen(LAST_INDEX);
         isAnimating.current = false;
         if (scrollAnimRef.current) {
           scrollAnimRef.current.stop();
@@ -388,7 +414,7 @@ export function FeaturesSection() {
     });
 
     return () => unsubscribe();
-  }, [scrollYProgress, progressToScrollY, playVideoTo, prefersReducedMotion, seekTo]);
+  }, [scrollYProgress, progressToScreenIndex, seekTo, LAST_INDEX]);
 
   /* ── Wheel handler ── */
   useEffect(() => {
@@ -396,7 +422,7 @@ export function FeaturesSection() {
     if (!section) return;
 
     const handleWheel = (e: WheelEvent) => {
-      const progress = scrollYProgress.get();
+      const progress = Math.max(0, Math.min(1, scrollYProgress.get()));
 
       /* Outside the section → let page scroll normally */
       if (progress <= 0 || progress >= 1) return;
@@ -407,11 +433,17 @@ export function FeaturesSection() {
         return;
       }
 
+      const syncIndex = progressToScreenIndex(progress);
+      if (syncIndex !== currentSnap.current) {
+        currentSnap.current = syncIndex;
+        setActiveScreen((prev) => (prev === syncIndex ? prev : syncIndex));
+      }
+
       const direction = e.deltaY > 0 ? 1 : -1;
-      const nextSnap = currentSnap.current + direction;
+      const nextSnap = Math.max(0, Math.min(LAST_INDEX, currentSnap.current)) + direction;
 
       /* Boundary: let page scroll past the section */
-      if (nextSnap < 0 || nextSnap > 4) return;
+      if (nextSnap < 0 || nextSnap > LAST_INDEX) return;
 
       /* With reduced motion, allow normal scroll instead of snap */
       if (prefersReducedMotion) return;
@@ -422,7 +454,7 @@ export function FeaturesSection() {
 
     section.addEventListener("wheel", handleWheel, { passive: false });
     return () => section.removeEventListener("wheel", handleWheel);
-  }, [scrollYProgress, snapTo, prefersReducedMotion]);
+  }, [scrollYProgress, snapTo, prefersReducedMotion, progressToScreenIndex, LAST_INDEX]);
 
   /* ── Touch swipe handler (mobile) ── */
   useEffect(() => {
@@ -433,24 +465,18 @@ export function FeaturesSection() {
       touchStartY.current = e.touches[0].clientY;
 
       /* Re-sync currentSnap to actual scroll position to prevent desync */
-      const progress = scrollYProgress.get();
+      const progress = Math.max(0, Math.min(1, scrollYProgress.get()));
       if (progress > 0 && progress < 1) {
-        let closest = 0;
-        let minDist = Infinity;
-        for (let i = 0; i < SCROLL_SNAPS.length; i++) {
-          const dist = Math.abs(progress - SCROLL_SNAPS[i]);
-          if (dist < minDist) {
-            minDist = dist;
-            closest = i;
-          }
+        const syncIndex = progressToScreenIndex(progress);
+        if (syncIndex !== currentSnap.current) {
+          currentSnap.current = syncIndex;
+          setActiveScreen((prev) => (prev === syncIndex ? prev : syncIndex));
         }
-        currentSnap.current = closest;
-        setActiveScreen(closest);
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      const progress = scrollYProgress.get();
+      const progress = Math.max(0, Math.min(1, scrollYProgress.get()));
 
       /* Outside section → let native scroll work */
       if (progress <= 0 || progress >= 1) return;
@@ -461,20 +487,28 @@ export function FeaturesSection() {
         return;
       }
 
+      const syncIndex = progressToScreenIndex(progress);
+      if (syncIndex !== currentSnap.current) {
+        currentSnap.current = syncIndex;
+      }
+      if (!isAnimating.current) {
+        setActiveScreen((prev) => (prev === syncIndex ? prev : syncIndex));
+      }
+
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartY.current - currentY;
       const direction = deltaY > 0 ? 1 : -1;
-      const nextSnap = currentSnap.current + direction;
+      const nextSnap = Math.max(0, Math.min(LAST_INDEX, currentSnap.current)) + direction;
 
       /* At boundary → let native scroll pass so user can leave */
-      if (nextSnap < 0 || nextSnap > 4) return;
+      if (nextSnap < 0 || nextSnap > LAST_INDEX) return;
 
       /* Inside section → block native scroll */
       e.preventDefault();
 
       if (isAnimating.current) return;
       if (prefersReducedMotion) return;
-      if (Math.abs(deltaY) < 35) return;
+      if (Math.abs(deltaY) < TOUCH_SWIPE_THRESHOLD) return;
 
       touchStartY.current = null;
       snapTo(nextSnap, direction as 1 | -1);
@@ -494,7 +528,14 @@ export function FeaturesSection() {
       section.removeEventListener("touchend", handleTouchEnd);
       section.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [scrollYProgress, snapTo, prefersReducedMotion]);
+  }, [
+    scrollYProgress,
+    snapTo,
+    prefersReducedMotion,
+    progressToScreenIndex,
+    LAST_INDEX,
+    TOUCH_SWIPE_THRESHOLD,
+  ]);
 
   const current = FEATURE_TEXT[activeScreen];
 
