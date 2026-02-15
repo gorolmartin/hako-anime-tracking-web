@@ -63,60 +63,149 @@ export function FeaturesSection() {
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoListenerRef = useRef<(() => void) | null>(null);
   const videoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoPrimedRef = useRef(false);
+  const videoReadyRef = useRef(false);
+  const videoReadyPromiseRef = useRef<Promise<void> | null>(null);
+  const videoPrimingPromiseRef = useRef<Promise<void> | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"],
   });
 
+  const waitForVideoReady = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return Promise.resolve();
+    if (videoReadyRef.current || video.readyState >= 1) {
+      videoReadyRef.current = true;
+      return Promise.resolve();
+    }
+    if (videoReadyPromiseRef.current) return videoReadyPromiseRef.current;
+
+    videoReadyPromiseRef.current = new Promise<void>((resolve) => {
+      const onReady = () => {
+        cleanup();
+        videoReadyRef.current = true;
+        resolve();
+      };
+      const onError = () => {
+        cleanup();
+        resolve();
+      };
+      const cleanup = () => {
+        video.removeEventListener("loadedmetadata", onReady);
+        video.removeEventListener("canplay", onReady);
+        video.removeEventListener("error", onError);
+      };
+
+      video.addEventListener("loadedmetadata", onReady);
+      video.addEventListener("canplay", onReady);
+      video.addEventListener("error", onError);
+    });
+
+    return videoReadyPromiseRef.current;
+  }, []);
+
+  const seekTo = useCallback(
+    async (time: number) => {
+      const video = videoRef.current;
+      if (!video) return;
+      await waitForVideoReady();
+      const currentVideo = videoRef.current;
+      if (!currentVideo) return;
+      currentVideo.currentTime = time;
+    },
+    [waitForVideoReady],
+  );
+
   /* ── webkit-playsinline for older iOS Safari ── */
   useEffect(() => {
     const video = videoRef.current;
-    if (video) video.setAttribute("webkit-playsinline", "true");
+    if (!video) return;
+    video.setAttribute("webkit-playsinline", "true");
+    if (video.readyState >= 1) videoReadyRef.current = true;
+    const markReady = () => {
+      videoReadyRef.current = true;
+    };
+    video.addEventListener("loadedmetadata", markReady);
+    video.addEventListener("canplay", markReady);
+    return () => {
+      video.removeEventListener("loadedmetadata", markReady);
+      video.removeEventListener("canplay", markReady);
+    };
   }, []);
 
   /* ── Start video on page load: play and stop at 1.4s (Welcome) ── */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    let cancelled = false;
     const stopAt = VIDEO_STOPS[0];
-    const onTimeUpdate = () => {
+    const onTimeUpdate = async () => {
       if (video.currentTime >= stopAt) {
         video.pause();
-        video.currentTime = stopAt;
         video.removeEventListener("timeupdate", onTimeUpdate);
+        await seekTo(stopAt);
       }
     };
-    video.addEventListener("timeupdate", onTimeUpdate);
-    video.play().catch(() => {
-      /* Autoplay blocked (e.g. mobile): just seek to stop */
-      video.currentTime = stopAt;
-      video.removeEventListener("timeupdate", onTimeUpdate);
-    });
-    return () => video.removeEventListener("timeupdate", onTimeUpdate);
-  }, []);
 
-  /* ── Prime video on first touch to unlock programmatic playback (mobile Safari) ── */
-  useEffect(() => {
-    const section = sectionRef.current;
-    const video = videoRef.current;
-    if (!section || !video) return;
-
-    const primeVideo = () => {
-      if (videoPrimedRef.current) return;
-      videoPrimedRef.current = true;
-      const t = video.currentTime;
-      video.play().then(() => {
-        video.pause();
-        video.currentTime = t;
-      }).catch(() => {});
-      section.removeEventListener("touchstart", primeVideo);
+    const run = async () => {
+      await waitForVideoReady();
+      if (cancelled) return;
+      const currentVideo = videoRef.current;
+      if (!currentVideo) return;
+      currentVideo.addEventListener("timeupdate", onTimeUpdate);
+      try {
+        await currentVideo.play();
+      } catch {
+        /* Autoplay blocked (e.g. mobile): just seek to stop */
+        await seekTo(stopAt);
+        currentVideo.removeEventListener("timeupdate", onTimeUpdate);
+      }
     };
 
-    section.addEventListener("touchstart", primeVideo, { once: true, passive: true });
-    return () => section.removeEventListener("touchstart", primeVideo);
-  }, []);
+    void run();
+    return () => {
+      cancelled = true;
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    };
+  }, [seekTo, waitForVideoReady]);
+
+  /* ── Prime video on first touch to unlock programmatic playback (mobile Safari) ── */
+  const primeVideo = useCallback(() => {
+    if (videoPrimingPromiseRef.current) return videoPrimingPromiseRef.current;
+
+    videoPrimingPromiseRef.current = (async () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      await waitForVideoReady();
+      const currentVideo = videoRef.current;
+      if (!currentVideo) return;
+
+      const t = currentVideo.currentTime;
+      try {
+        await currentVideo.play();
+        currentVideo.pause();
+        await seekTo(t);
+      } catch {
+        await seekTo(t);
+      }
+    })();
+
+    return videoPrimingPromiseRef.current;
+  }, [seekTo, waitForVideoReady]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const handleFirstTouch = () => {
+      void primeVideo();
+    };
+
+    section.addEventListener("touchstart", handleFirstTouch, { once: true, passive: true });
+    return () => section.removeEventListener("touchstart", handleFirstTouch);
+  }, [primeVideo]);
 
   /* ── Convert scrollYProgress → absolute window.scrollY ── */
   const progressToScrollY = useCallback((progress: number) => {
@@ -143,6 +232,11 @@ export function FeaturesSection() {
     }
 
     const stopTime = VIDEO_STOPS[targetIndex];
+    const startTime = video.currentTime;
+    let playbackProgressed = false;
+    const markPlaybackProgress = () => {
+      playbackProgressed = true;
+    };
 
     const cleanUp = () => {
       if (videoTimeoutRef.current) {
@@ -150,10 +244,14 @@ export function FeaturesSection() {
         videoTimeoutRef.current = null;
       }
       video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("playing", markPlaybackProgress);
       videoListenerRef.current = null;
     };
 
     const onTimeUpdate = () => {
+      if (video.currentTime > startTime + 0.02) {
+        playbackProgressed = true;
+      }
       if (video.currentTime >= stopTime) {
         video.pause();
         cleanUp();
@@ -162,28 +260,29 @@ export function FeaturesSection() {
 
     videoTimeoutRef.current = setTimeout(() => {
       video.pause();
-      video.currentTime = stopTime;
-      video.removeEventListener("timeupdate", onTimeUpdate);
-      videoListenerRef.current = null;
-      videoTimeoutRef.current = null;
-    }, 3000);
+      void seekTo(stopTime);
+      cleanUp();
+    }, 3200);
 
     videoListenerRef.current = onTimeUpdate;
+    video.addEventListener("playing", markPlaybackProgress);
     video.addEventListener("timeupdate", onTimeUpdate);
 
     video.play().then(() => {
-      /* Safari may "succeed" but not actually play — check after 500ms */
+      /* Safari may "succeed" but not actually paint/play — verify and recover */
       setTimeout(() => {
-        if (video.paused && videoListenerRef.current === onTimeUpdate) {
-          video.currentTime = stopTime;
+        const stalled = video.paused || !playbackProgressed;
+        if (stalled && videoListenerRef.current === onTimeUpdate) {
+          video.pause();
+          void seekTo(stopTime);
           cleanUp();
         }
-      }, 500);
+      }, 900);
     }).catch(() => {
-      video.currentTime = stopTime;
+      void seekTo(stopTime);
       cleanUp();
     });
-  }, []);
+  }, [seekTo]);
 
   /* ── Snap to a screen index ── */
   const snapTo = useCallback(
@@ -229,13 +328,24 @@ export function FeaturesSection() {
       if (!video) return;
 
       if (direction === 1 && !prefersReducedMotion) {
-        playVideoTo(targetIndex);
+        const coarsePointer =
+          typeof window !== "undefined" &&
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(pointer: coarse)").matches;
+
+        if (coarsePointer) {
+          void primeVideo().finally(() => {
+            playVideoTo(targetIndex);
+          });
+        } else {
+          playVideoTo(targetIndex);
+        }
       } else {
         video.pause();
-        video.currentTime = VIDEO_STOPS[targetIndex];
+        void seekTo(VIDEO_STOPS[targetIndex]);
       }
     },
-    [progressToScrollY, playVideoTo, prefersReducedMotion],
+    [progressToScrollY, playVideoTo, prefersReducedMotion, primeVideo, seekTo],
   );
 
   /* ── Initial entry: when section first scrolls into view, play to screen 0 ── */
@@ -250,7 +360,7 @@ export function FeaturesSection() {
 
         /* Fix up frame when scrolling in (e.g. if autoplay was blocked on load) */
         const video = videoRef.current;
-        if (video) video.currentTime = VIDEO_STOPS[0];
+        if (video) void seekTo(VIDEO_STOPS[0]);
       }
 
       /* Reset state when leaving section (scroll back up) */
@@ -278,7 +388,7 @@ export function FeaturesSection() {
     });
 
     return () => unsubscribe();
-  }, [scrollYProgress, progressToScrollY, playVideoTo, prefersReducedMotion]);
+  }, [scrollYProgress, progressToScrollY, playVideoTo, prefersReducedMotion, seekTo]);
 
   /* ── Wheel handler ── */
   useEffect(() => {
@@ -449,7 +559,6 @@ export function FeaturesSection() {
               aspectRatio: "9 / 19.5",
               borderRadius: 32,
               border: "2px solid #1B1F28",
-              transform: "translateZ(0)",
             }}
           >
             <video
@@ -460,7 +569,6 @@ export function FeaturesSection() {
               preload="auto"
               aria-label="App preview video showing Hako features"
               className="absolute inset-0 w-full h-full object-cover"
-              style={{ transform: "translateZ(0)" }}
             />
           </motion.div>
         </div>
