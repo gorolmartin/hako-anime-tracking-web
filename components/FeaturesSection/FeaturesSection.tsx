@@ -69,6 +69,7 @@ export function FeaturesSection() {
   const videoReadyRef = useRef(false);
   const videoReadyPromiseRef = useRef<Promise<void> | null>(null);
   const videoPrimingPromiseRef = useRef<Promise<void> | null>(null);
+  const isVideoPlayingRef = useRef(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -248,6 +249,7 @@ export function FeaturesSection() {
       clearTimeout(videoTimeoutRef.current);
       videoTimeoutRef.current = null;
     }
+    isVideoPlayingRef.current = false;
 
     const stopTime = VIDEO_STOPS[targetIndex];
     const startTime = video.currentTime;
@@ -264,6 +266,7 @@ export function FeaturesSection() {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("playing", markPlaybackProgress);
       videoListenerRef.current = null;
+      isVideoPlayingRef.current = false;
     };
 
     const onTimeUpdate = () => {
@@ -285,6 +288,7 @@ export function FeaturesSection() {
     videoListenerRef.current = onTimeUpdate;
     video.addEventListener("playing", markPlaybackProgress);
     video.addEventListener("timeupdate", onTimeUpdate);
+    isVideoPlayingRef.current = true;
 
     video.play().then(() => {
       /* Safari may "succeed" but not actually paint/play — verify and recover */
@@ -360,6 +364,7 @@ export function FeaturesSection() {
         }
       } else {
         video.pause();
+        isVideoPlayingRef.current = false;
         void seekTo(VIDEO_STOPS[targetIndex]);
       }
     },
@@ -380,12 +385,19 @@ export function FeaturesSection() {
 
       /* Keep state synced during fast/momentum scroll when we're not actively animating */
       if (inSection && !isAnimating.current) {
+        const isCoarsePointer =
+          typeof window !== "undefined" &&
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(pointer: coarse)").matches;
+
         const index = progressToScreenIndex(clampedProgress);
         if (index !== currentSnap.current) {
           currentSnap.current = index;
           setActiveScreen((prev) => (prev === index ? prev : index));
-          const video = videoRef.current;
-          if (video) void seekTo(VIDEO_STOPS[index]);
+          if (isCoarsePointer && !isVideoPlayingRef.current) {
+            const video = videoRef.current;
+            if (video) void seekTo(VIDEO_STOPS[index]);
+          }
         }
       }
 
@@ -395,6 +407,7 @@ export function FeaturesSection() {
         currentSnap.current = 0;
         setActiveScreen(0);
         isAnimating.current = false;
+        isVideoPlayingRef.current = false;
         if (scrollAnimRef.current) {
           scrollAnimRef.current.stop();
           scrollAnimRef.current = null;
@@ -406,6 +419,7 @@ export function FeaturesSection() {
         currentSnap.current = LAST_INDEX;
         setActiveScreen(LAST_INDEX);
         isAnimating.current = false;
+        isVideoPlayingRef.current = false;
         if (scrollAnimRef.current) {
           scrollAnimRef.current.stop();
           scrollAnimRef.current = null;
